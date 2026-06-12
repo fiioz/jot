@@ -2,6 +2,15 @@
   "name": "jot",
   "private": true,
   "version": "0.0.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fiioz/jot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fiioz/jot/issues"
+  },
+  "homepage": "https://github.com/fiioz/jot#readme",
   "type": "module",
   "scripts": {
     "dev": "vite",
