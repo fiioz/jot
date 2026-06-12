@@ -55,21 +55,27 @@ const invertRgbColor = (color: string) => {
   return `rgba(${rr}, ${gg}, ${bb}, ${Math.max(0, Math.min(1, a))})`;
 };
 
-const invertColor = (color: string) => {
+const invertColor = (color: unknown, fallback: string) => {
+  if (typeof color !== 'string') return fallback;
   const trimmed = color.trim();
-  if (trimmed === '' || trimmed.toLowerCase() === 'transparent') return color;
+  if (trimmed === '') return fallback;
+  if (trimmed.toLowerCase() === 'transparent') return 'transparent';
   const hex = invertHexColor(trimmed);
   if (hex) return hex;
   const rgb = invertRgbColor(trimmed);
   if (rgb) return rgb;
-  return color;
+  return trimmed;
 };
 
-const invertStyleColors = (style: ElementStyle): ElementStyle => ({
-  ...style,
-  strokeColor: invertColor(style.strokeColor),
-  backgroundColor: style.backgroundColor === 'transparent' ? style.backgroundColor : invertColor(style.backgroundColor),
-});
+const invertStyleColors = (style: ElementStyle): ElementStyle => {
+  const strokeColor = invertColor(style.strokeColor, DEFAULT_STYLE.strokeColor);
+  const bg = typeof style.backgroundColor === 'string' ? style.backgroundColor : DEFAULT_STYLE.backgroundColor;
+  const bgTrimmed = bg.trim();
+  const backgroundColor = bgTrimmed.toLowerCase() === 'transparent'
+    ? 'transparent'
+    : invertColor(bgTrimmed, DEFAULT_STYLE.backgroundColor);
+  return { ...style, strokeColor, backgroundColor };
+};
 
 function App() {
   const [tool, setTool] = useState<ElementType>('selection');
@@ -111,10 +117,15 @@ function App() {
 
   const toggleTheme = () => {
     setElements(prev => prev.map(el => {
+      const stroke = typeof el.strokeColor === 'string' ? el.strokeColor : DEFAULT_STYLE.strokeColor;
+      const bg = typeof el.backgroundColor === 'string' ? el.backgroundColor : DEFAULT_STYLE.backgroundColor;
+      const bgTrimmed = bg.trim();
       const updated: ExcalidrawElement = {
         ...el,
-        strokeColor: invertColor(el.strokeColor),
-        backgroundColor: el.backgroundColor === 'transparent' ? el.backgroundColor : invertColor(el.backgroundColor),
+        strokeColor: invertColor(stroke, DEFAULT_STYLE.strokeColor),
+        backgroundColor: bgTrimmed.toLowerCase() === 'transparent'
+          ? 'transparent'
+          : invertColor(bgTrimmed, DEFAULT_STYLE.backgroundColor),
       };
       if (updated.type === 'freedraw' || updated.type === 'text' || updated.type === 'image') return updated;
       return createElement(updated.id, updated.x1, updated.y1, updated.x2, updated.y2, updated.type, updated);
