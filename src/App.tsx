@@ -15,6 +15,62 @@ const DEFAULT_STYLE: ElementStyle = {
   roughness: 1
 };
 
+const clamp255 = (v: number) => Math.max(0, Math.min(255, v));
+
+const invertHexColor = (hex: string) => {
+  const normalized = hex.trim();
+  if (!normalized.startsWith('#')) return null;
+  const raw = normalized.slice(1);
+  if (![3, 6, 8].includes(raw.length)) return null;
+
+  const expand = (s: string) => (s.length === 1 ? s + s : s);
+  const rHex = raw.length === 3 ? expand(raw[0]) : raw.slice(0, 2);
+  const gHex = raw.length === 3 ? expand(raw[1]) : raw.slice(2, 4);
+  const bHex = raw.length === 3 ? expand(raw[2]) : raw.slice(4, 6);
+  const aHex = raw.length === 8 ? raw.slice(6, 8) : null;
+
+  const r = Number.parseInt(rHex, 16);
+  const g = Number.parseInt(gHex, 16);
+  const b = Number.parseInt(bHex, 16);
+  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return null;
+
+  const toHex2 = (n: number) => clamp255(n).toString(16).padStart(2, '0');
+  const out = `#${toHex2(255 - r)}${toHex2(255 - g)}${toHex2(255 - b)}${aHex ? aHex : ''}`;
+  return out;
+};
+
+const invertRgbColor = (color: string) => {
+  const m = color.trim().match(/^rgba?\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})(?:\s*,\s*([0-9.]+)\s*)?\)$/i);
+  if (!m) return null;
+  const r = Number(m[1]);
+  const g = Number(m[2]);
+  const b = Number(m[3]);
+  const a = m[4] !== undefined ? Number(m[4]) : null;
+  if ([r, g, b].some(v => Number.isNaN(v))) return null;
+  if (a !== null && Number.isNaN(a)) return null;
+  const rr = clamp255(255 - clamp255(r));
+  const gg = clamp255(255 - clamp255(g));
+  const bb = clamp255(255 - clamp255(b));
+  if (a === null) return `rgb(${rr}, ${gg}, ${bb})`;
+  return `rgba(${rr}, ${gg}, ${bb}, ${Math.max(0, Math.min(1, a))})`;
+};
+
+const invertColor = (color: string) => {
+  const trimmed = color.trim();
+  if (trimmed === '' || trimmed.toLowerCase() === 'transparent') return color;
+  const hex = invertHexColor(trimmed);
+  if (hex) return hex;
+  const rgb = invertRgbColor(trimmed);
+  if (rgb) return rgb;
+  return color;
+};
+
+const invertStyleColors = (style: ElementStyle): ElementStyle => ({
+  ...style,
+  strokeColor: invertColor(style.strokeColor),
+  backgroundColor: style.backgroundColor === 'transparent' ? style.backgroundColor : invertColor(style.backgroundColor),
+});
+
 function App() {
   const [tool, setTool] = useState<ElementType>('selection');
   const [currentStyle, setCurrentStyle] = useState<ElementStyle>(DEFAULT_STYLE);
@@ -54,6 +110,16 @@ function App() {
   }, [theme]);
 
   const toggleTheme = () => {
+    setElements(prev => prev.map(el => {
+      const updated: ExcalidrawElement = {
+        ...el,
+        strokeColor: invertColor(el.strokeColor),
+        backgroundColor: el.backgroundColor === 'transparent' ? el.backgroundColor : invertColor(el.backgroundColor),
+      };
+      if (updated.type === 'freedraw' || updated.type === 'text' || updated.type === 'image') return updated;
+      return createElement(updated.id, updated.x1, updated.y1, updated.x2, updated.y2, updated.type, updated);
+    }), false);
+    setCurrentStyle(prev => invertStyleColors(prev));
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
