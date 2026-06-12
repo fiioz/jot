@@ -73,12 +73,14 @@ export const createElement = (
   }
 ): ExcalidrawElement => {
   let roughElement;
+  const { roughElement: roughElementIgnored, ...styleWithoutRoughElement } = (style ?? {}) as (ElementStyle & Partial<ExcalidrawElement> & { roughElement?: unknown });
+  void roughElementIgnored;
   const options = {
-    stroke: style.strokeColor,
-    fill: style.backgroundColor === 'transparent' ? undefined : style.backgroundColor,
-    fillStyle: style.fillStyle,
-    strokeWidth: style.strokeWidth,
-    roughness: style.roughness
+    stroke: styleWithoutRoughElement.strokeColor,
+    fill: styleWithoutRoughElement.backgroundColor === 'transparent' ? undefined : styleWithoutRoughElement.backgroundColor,
+    fillStyle: styleWithoutRoughElement.fillStyle,
+    strokeWidth: styleWithoutRoughElement.strokeWidth,
+    roughness: styleWithoutRoughElement.roughness
   };
 
   switch (type) {
@@ -141,15 +143,15 @@ export const createElement = (
         x2,
         y2,
         points: [{ x: x1, y: y1 }],
-        angle: style.angle ?? 0,
-        groupId: style.groupId ?? null,
-        locked: style.locked ?? false,
-        ...style,
+        angle: styleWithoutRoughElement.angle ?? 0,
+        groupId: styleWithoutRoughElement.groupId ?? null,
+        locked: styleWithoutRoughElement.locked ?? false,
+        ...styleWithoutRoughElement,
       };
     case 'text': {
-      const text = style.text ?? '';
-      const fontSize = style.fontSize ?? 24;
-      const fontFamily = style.fontFamily ?? 'Arial';
+      const text = styleWithoutRoughElement.text ?? '';
+      const fontSize = styleWithoutRoughElement.fontSize ?? 24;
+      const fontFamily = styleWithoutRoughElement.fontFamily ?? 'Arial';
       const width = Math.max(1, x2 - x1);
       const height = Math.max(1, y2 - y1);
       return {
@@ -162,14 +164,14 @@ export const createElement = (
         text,
         fontSize,
         fontFamily,
-        angle: style.angle ?? 0,
-        groupId: style.groupId ?? null,
-        locked: style.locked ?? false,
-        ...style,
+        angle: styleWithoutRoughElement.angle ?? 0,
+        groupId: styleWithoutRoughElement.groupId ?? null,
+        locked: styleWithoutRoughElement.locked ?? false,
+        ...styleWithoutRoughElement,
       };
     }
     case 'image': {
-      const imageSrc = style.imageSrc ?? '';
+      const imageSrc = styleWithoutRoughElement.imageSrc ?? '';
       const width = Math.max(1, x2 - x1);
       const height = Math.max(1, y2 - y1);
       return {
@@ -180,10 +182,10 @@ export const createElement = (
         x2: x1 + width,
         y2: y1 + height,
         imageSrc,
-        angle: style.angle ?? 0,
-        groupId: style.groupId ?? null,
-        locked: style.locked ?? false,
-        ...style,
+        angle: styleWithoutRoughElement.angle ?? 0,
+        groupId: styleWithoutRoughElement.groupId ?? null,
+        locked: styleWithoutRoughElement.locked ?? false,
+        ...styleWithoutRoughElement,
       };
     }
     default:
@@ -191,6 +193,7 @@ export const createElement = (
       break;
   }
   return {
+    ...styleWithoutRoughElement,
     id,
     type,
     x1,
@@ -198,10 +201,9 @@ export const createElement = (
     x2,
     y2,
     roughElement,
-    angle: style.angle ?? 0,
-    groupId: style.groupId ?? null,
-    locked: style.locked ?? false,
-    ...style,
+    angle: styleWithoutRoughElement.angle ?? 0,
+    groupId: styleWithoutRoughElement.groupId ?? null,
+    locked: styleWithoutRoughElement.locked ?? false,
   };
 };
 
